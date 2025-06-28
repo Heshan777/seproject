@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
@@ -13,29 +14,65 @@ const Navbar = () => {
 
     const getDashboardLink = () => {
         if (!user) return "/";
-        return user.role === 'students' ? "/student/dashboard" : "/company/dashboard";
-    };
-
-    const getProfileLink = () => {
-        if (!user) return "/";
-        return user.role === 'students' ? "/student/profile" : "/company/profile";
+        return user.role === 'students' ? "/student/dashboard" :
+               user.role === 'companies' ? "/company/dashboard" :
+               '/admin/dashboard';
     };
 
     return (
-        <nav className="navbar">
-            <Link to={getDashboardLink()} className="nav-logo">InternLink</Link>
-            <div className="nav-links">
-                {user ? (
-                    <>
-                        <Link to={getProfileLink()}>My Profile</Link>
-                        <span>Welcome, {user.fullName || user.companyName || user.email}</span>
-                        <button onClick={handleLogout} className="nav-button">Logout</button>
-                    </>
-                ) : (
-                    <Link to="/">Login / Register</Link>
-                )}
-            </div>
-        </nav>
+        // A modern, semi-transparent AppBar that sits above the page content
+        <AppBar 
+            position="static" 
+            color="transparent" 
+            elevation={0} 
+            sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(8px)',
+            }}
+        >
+            <Toolbar>
+                <Typography
+                    variant="h6"
+                    component={RouterLink}
+                    to={getDashboardLink()}
+                    sx={{
+                        flexGrow: 1,
+                        fontWeight: 'bold',
+                        color: '#4A5568', // A slightly softer black for the logo
+                        textDecoration: 'none'
+                    }}
+                >
+                    InternLink
+                </Typography>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {user ? (
+                        <>
+                            <Typography variant="body1" sx={{ color: '#2D3748' }}>
+                                Welcome, {user.fullName || user.companyName || 'User'}
+                            </Typography>
+                            <Button variant="outlined" color="primary" onClick={handleLogout}>
+                                Logout
+                            </Button>
+                        </>
+                    ) : (
+                        // This is the styled "Login / Register" button
+                        <Button
+                            component={RouterLink}
+                            to="/"
+                            variant="outlined"
+                            sx={{ 
+                                color: '#4A5568',
+                                borderColor: 'rgba(0, 0, 0, 0.23)'
+                            }}
+                        >
+                            Login / Register
+                        </Button>
+                    )}
+                </Box>
+            </Toolbar>
+        </AppBar>
     );
 };
+
 export default Navbar;

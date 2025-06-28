@@ -2,14 +2,59 @@ import React, { useState, useEffect } from 'react';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from '../../hooks/useAuth';
+import {
+  Avatar, Box, Button, Container, Paper, Typography, Grid, TextField,
+  CircularProgress, Divider, Chip, Stack, Link, Alert, IconButton, Tooltip,
+  InputAdornment, createTheme, ThemeProvider
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import LanguageIcon from '@mui/icons-material/Language';
+
+const profileTheme = createTheme({
+  palette: {
+    primary: {
+      main: '#e91e63',
+    },
+    secondary: {
+      main: '#fce4ec',
+    },
+    background: {
+      default: '#fdf6f8',
+    },
+  },
+  typography: {
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  },
+});
+
+const InfoSection = ({ title, children }) => (
+  <Box>
+    <Typography variant="overline" color="text.secondary" sx={{ display: 'block', mb: 1.5, fontWeight: 'bold' }}>
+      {title}
+    </Typography>
+    {children}
+  </Box>
+);
 
 const StudentProfilePage = () => {
-    const { user } = useAuth();
-    const [profileData, setProfileData] = useState({ fullName: '', skills: '', education: '', resumeUrl: '' });
+    // ... rest of the component code remains the same ...
+    const { user, setUser } = useAuth();
+    
+    const [profileData, setProfileData] = useState({
+        fullName: '', bio: '', education: '', skills: '',
+        resumeUrl: '', website: '', linkedin: '', github: '',
+    });
+    const [initialProfileData, setInitialProfileData] = useState({});
     const [resumeFile, setResumeFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
+    const [error, setError] = useState('');
     
     const db = getFirestore();
     const storage = getStorage();
@@ -22,12 +67,18 @@ const StudentProfilePage = () => {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                setProfileData({
+                const fetchedData = {
                     fullName: data.fullName || '',
-                    skills: data.skills || '',
+                    bio: data.bio || 'I am a passionate student ready to learn and contribute.',
                     education: data.education || '',
+                    skills: data.skills || '',
                     resumeUrl: data.resumeUrl || '',
-                });
+                    website: data.website || '',
+                    linkedin: data.linkedin || '',
+                    github: data.github || '',
+                };
+                setProfileData(fetchedData);
+                setInitialProfileData(fetchedData);
             }
             setLoading(false);
         };
@@ -35,33 +86,31 @@ const StudentProfilePage = () => {
     }, [user, db]);
 
     const handleFileChange = (e) => {
-        if (e.target.files[0]) {
-            setResumeFile(e.target.files[0]);
+        const file = e.target.files[0];
+        if (file && file.type === "application/pdf") {
+            setResumeFile(file);
+            setError('');
+        } else {
+            setResumeFile(null);
+            setError("Please select a PDF file.");
         }
     };
 
     const handleResumeUpload = async () => {
         if (!resumeFile) return;
         setUploading(true);
-        // Create a storage reference: 'resumes/USER_ID/FILENAME'
-        const storageRef = ref(storage, `resumes/${user.uid}/${resumeFile.name}`);
-        
+        setError('');
+        const storageRef = ref(storage, `resumes/${user.uid}/${resumeFile.name.replace(/\s/g, '_')}`);
         try {
-            // Upload the file
             await uploadBytes(storageRef, resumeFile);
-            // Get the download URL
             const downloadURL = await getDownloadURL(storageRef);
-            
-            // Save the URL to the user's profile in Firestore
-            const docRef = doc(db, 'students', user.uid);
-            await updateDoc(docRef, { resumeUrl: downloadURL });
-
-            setProfileData({...profileData, resumeUrl: downloadURL});
-            alert("Resume uploaded successfully!");
-            setResumeFile(null); // Clear the file input
+            await updateDoc(doc(db, 'students', user.uid), { resumeUrl: downloadURL });
+            const updatedProfile = { ...profileData, resumeUrl: downloadURL };
+            setProfileData(updatedProfile);
+            setInitialProfileData(updatedProfile);
+            setResumeFile(null);
         } catch (error) {
-            console.error("Error uploading resume: ", error);
-            alert("Failed to upload resume.");
+            setError("Failed to upload resume.");
         } finally {
             setUploading(false);
         }
@@ -69,74 +118,100 @@ const StudentProfilePage = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        const docRef = doc(db, 'students', user.uid);
         try {
-            await updateDoc(docRef, {
-                fullName: profileData.fullName,
-                skills: profileData.skills,
-                education: profileData.education
-            });
-            alert("Profile updated successfully!");
+            await updateDoc(doc(db, 'students', user.uid), profileData);
+            if (setUser) setUser(prevUser => ({...prevUser, ...profileData}));
             setEditing(false);
+            setInitialProfileData(profileData);
         } catch (error) {
-            console.error("Error updating profile:", error);
-            alert("Failed to update profile.");
+            setError("Failed to update profile.");
         }
     };
+
+    const handleCancelEdit = () => {
+        setProfileData(initialProfileData);
+        setEditing(false);
+    };
     
-    if (loading) return <div className="loading-container">Loading Profile...</div>
+    const renderSkillsChips = () => {
+        if (!profileData.skills) return <Typography color="text.secondary" fontStyle="italic">No skills provided.</Typography>;
+        return profileData.skills.split(',').map(skill => skill.trim()).filter(Boolean).map((skill, index) => <Chip key={index} label={skill} sx={{ backgroundColor: '#fce4ec', color: '#e91e63', fontWeight: 500 }} />);
+    };
+
+    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 5 }}><CircularProgress /></Box>;
 
     return (
-        <div className="page-container">
-            <h1>My Profile</h1>
-            <div className="profile-card">
-                {!editing ? (
-                    <div>
-                        <p><strong>Full Name:</strong> {profileData.fullName}</p>
-                        <p><strong>Email:</strong> {user?.email}</p>
-                        <p><strong>Skills:</strong> {profileData.skills || 'Not set'}</p>
-                        <p><strong>Education:</strong> {profileData.education || 'Not set'}</p>
-                        <p><strong>Resume:</strong> 
-                            {profileData.resumeUrl 
-                                ? <a href={profileData.resumeUrl} target="_blank" rel="noopener noreferrer">View Resume</a> 
-                                : 'Not uploaded'
-                            }
-                        </p>
-                        <button onClick={() => setEditing(true)} className="cta-button">Edit Profile</button>
-                    </div>
-                ) : (
-                    <form onSubmit={handleSave}>
-                        {/* ... form fields for fullName, skills, education ... */}
-                        <div className="form-group">
-                            <label>Full Name</label>
-                            <input type="text" value={profileData.fullName} onChange={(e) => setProfileData({...profileData, fullName: e.target.value})} />
-                        </div>
-                        <div className="form-group">
-                            <label>Skills</label>
-                            <textarea value={profileData.skills} onChange={(e) => setProfileData({...profileData, skills: e.target.value})} placeholder="e.g., React, Node.js, Python" />
-                        </div>
-                        <div className="form-group">
-                            <label>Education</label>
-                            <textarea value={profileData.education} onChange={(e) => setProfileData({...profileData, education: e.target.value})} placeholder="e.g., B.Sc. in Computer Science" />
-                        </div>
-                        <div className="button-group">
-                            <button type="submit" className="cta-button">Save Changes</button>
-                            <button type="button" onClick={() => setEditing(false)} className="secondary-button">Cancel</button>
-                        </div>
-                    </form>
-                )}
-            </div>
-
-            {/* Resume Upload Section */}
-            <div className="profile-card resume-upload-section">
-                <h3>Upload or Replace Resume</h3>
-                <p>Please upload your resume in PDF format.</p>
-                <input type="file" onChange={handleFileChange} accept=".pdf" />
-                <button onClick={handleResumeUpload} disabled={!resumeFile || uploading} className="cta-button">
-                    {uploading ? 'Uploading...' : 'Upload'}
-                </button>
-            </div>
-        </div>
+        <ThemeProvider theme={profileTheme}>
+            <Box sx={{ bgcolor: 'background.default', minHeight: 'calc(100vh - 64px)', py: {xs: 3, sm: 5} }}>
+                <Container maxWidth="md">
+                    <Paper elevation={5} sx={{ borderRadius: '24px', overflow: 'hidden' }}>
+                        <Box sx={{ p: {xs: 2, sm: 4}, background: 'linear-gradient(to right, #fce4ec, #f8bbd0)' }}>
+                            <Grid container spacing={{xs: 2, sm: 3}} alignItems="center">
+                                <Grid item>
+                                    <Avatar sx={{ width: {xs: 80, sm: 120}, height: {xs: 80, sm: 120}, bgcolor: 'primary.main', fontSize: '3rem' }}>
+                                        {profileData.fullName.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                </Grid>
+                                <Grid item xs>
+                                    <Typography variant="h4" sx={{ fontWeight: 'bold', fontFamily: "'Poppins', sans-serif" }}>HELLO</Typography>
+                                    <Typography variant="h5" color="primary.dark">{profileData.fullName}</Typography>
+                                </Grid>
+                                <Grid item>
+                                    {editing ? (
+                                        <Stack direction="row" spacing={1}>
+                                            <Tooltip title="Cancel"><IconButton onClick={handleCancelEdit}><CancelIcon /></IconButton></Tooltip>
+                                            <Tooltip title="Save"><IconButton type="submit" color="primary" form="profile-form"><SaveIcon /></IconButton></Tooltip>
+                                        </Stack>
+                                    ) : (
+                                        <Tooltip title="Edit Profile"><IconButton onClick={() => setEditing(true)}><EditIcon /></IconButton></Tooltip>
+                                    )}
+                                </Grid>
+                            </Grid>
+                        </Box>
+                        <Box component="form" id="profile-form" onSubmit={handleSave} sx={{ p: {xs: 2, sm: 4} }}>
+                             <Grid container spacing={{xs: 4, sm: 5}}>
+                                <Grid item xs={12} md={5}>
+                                    <Stack spacing={3} divider={<Divider flexItem />}>
+                                        <InfoSection title="Contact">
+                                            <Typography variant="body2">{user?.email}</Typography>
+                                        </InfoSection>
+                                        <InfoSection title="Resume">
+                                            {profileData.resumeUrl && <Button size="small" variant="text" component={Link} href={profileData.resumeUrl} target="_blank">View Resume</Button>}
+                                            <Button component="label" size="small" startIcon={<UploadFileIcon />} sx={{ mt: 0.5, textTransform: 'none' }}>
+                                                {resumeFile ? "1 File Selected" : "Upload"}
+                                                <input type="file" hidden accept=".pdf" onChange={handleFileChange} />
+                                            </Button>
+                                            {resumeFile && <Button size="small" onClick={handleResumeUpload} disabled={uploading} sx={{ml: 1}}>{uploading ? <CircularProgress size={20}/> : 'Save'}</Button>}
+                                        </InfoSection>
+                                        <InfoSection title="Online Presence">
+                                             <Stack direction="row" spacing={1}>
+                                                {editing ? <TextField fullWidth variant="standard" size="small" label="LinkedIn" name="linkedin" value={profileData.linkedin} onChange={e => setProfileData({...profileData, linkedin: e.target.value})} InputProps={{startAdornment: <InputAdornment position="start"><LinkedInIcon/></InputAdornment>}}/> : profileData.linkedin && <IconButton component={Link} href={profileData.linkedin} target="_blank"><LinkedInIcon /></IconButton>}
+                                                {editing ? <TextField fullWidth variant="standard" size="small" label="GitHub" name="github" value={profileData.github} onChange={e => setProfileData({...profileData, github: e.target.value})} InputProps={{startAdornment: <InputAdornment position="start"><GitHubIcon/></InputAdornment>}}/> : profileData.github && <IconButton component={Link} href={profileData.github} target="_blank"><GitHubIcon /></IconButton>}
+                                                {editing ? <TextField fullWidth variant="standard" size="small" label="Website" name="website" value={profileData.website} onChange={e => setProfileData({...profileData, website: e.target.value})} InputProps={{startAdornment: <InputAdornment position="start"><LanguageIcon/></InputAdornment>}}/> : profileData.website && <IconButton component={Link} href={profileData.website} target="_blank"><LanguageIcon /></IconButton>}
+                                             </Stack>
+                                        </InfoSection>
+                                    </Stack>
+                                </Grid>
+                                <Grid item xs={12} md={7}>
+                                    <Stack spacing={3}>
+                                        <InfoSection title="About Me">
+                                            {editing ? <TextField multiline rows={4} fullWidth variant="outlined" name="bio" value={profileData.bio} onChange={e => setProfileData({...profileData, bio: e.target.value})} /> : <Typography sx={{whiteSpace: 'pre-wrap', fontStyle: profileData.bio ? 'normal' : 'italic', color: profileData.bio ? 'inherit' : 'text.secondary'}}>{profileData.bio}</Typography>}
+                                        </InfoSection>
+                                         <InfoSection title="Education">
+                                            {editing ? <TextField fullWidth variant="outlined" name="education" value={profileData.education} onChange={e => setProfileData({...profileData, education: e.target.value})} /> : <Typography>{profileData.education || 'Not provided'}</Typography>}
+                                        </InfoSection>
+                                        <InfoSection title="Skills">
+                                            {editing ? <TextField fullWidth variant="outlined" helperText="Separate skills with a comma" name="skills" value={profileData.skills} onChange={e => setProfileData({...profileData, skills: e.target.value})} /> : <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>{renderSkillsChips()}</Box>}
+                                        </InfoSection>
+                                    </Stack>
+                                </Grid>
+                             </Grid>
+                             {error && <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert>}
+                        </Box>
+                    </Paper>
+                </Container>
+            </Box>
+        </ThemeProvider>
     );
 };
 

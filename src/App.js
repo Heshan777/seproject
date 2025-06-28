@@ -22,6 +22,7 @@ import MyApplicationsPage from './pages/student/MyApplicationsPage';
 import ViewApplicantsPage from './pages/company/ViewApplicantsPage';
 import StudentProfilePage from './pages/student/StudentProfilePage';
 import CompanyProfilePage from './pages/company/CompanyProfilePage';
+import AdminLoginPage from './pages/auth/AdminLoginPage'; 
 
 function App() {
   return (
@@ -36,7 +37,7 @@ function App() {
             <Route path="/student/signup" element={<StudentSignupPage />} />
             <Route path="/company/login" element={<CompanyLoginPage />} />
             <Route path="/company/signup" element={<CompanySignupPage />} />
-
+               <Route path="/admin/login" element={<AdminLoginPage />} />
             {/* --- Protected Student Routes --- */}
             <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['students']}><StudentDashboard /></ProtectedRoute>} />
             <Route path="/my-applications" element={<ProtectedRoute allowedRoles={['students']}><MyApplicationsPage /></ProtectedRoute>} />

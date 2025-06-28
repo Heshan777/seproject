@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
   Paper,
   TextField,
   Typography,
-  Link,
   Alert,
   CircularProgress,
   GlobalStyles,
@@ -19,7 +18,7 @@ import {
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#0d6efd',
+      main: '#d32f2f', // A distinct red for admin
     },
   },
   typography: {
@@ -27,7 +26,7 @@ const theme = createTheme({
   },
 });
 
-const CompanyLoginPage = () => {
+const AdminLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -40,10 +39,11 @@ const CompanyLoginPage = () => {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password, 'companies');
-      navigate('/company/dashboard');
+      // Call the login function with the 'admins' userType
+      await login(email, password, 'admins');
+      navigate('/admin/dashboard');
     } catch (err) {
-      setError(err.message || 'Failed to log in. Please check your credentials.');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ const CompanyLoginPage = () => {
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 'calc(100vh - 70px)', // Adjust based on navbar height
+          minHeight: 'calc(100vh - 70px)',
         }}
       >
         <Paper
@@ -83,13 +83,13 @@ const CompanyLoginPage = () => {
           }}
         >
           <Typography variant="h4" component="h1" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 2 }}>
-            Company Login
+            Admin Portal
           </Typography>
 
           {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
 
           <TextField
-            label="Company Email"
+            label="Admin Email"
             type="email"
             variant="outlined"
             value={email}
@@ -131,17 +131,10 @@ const CompanyLoginPage = () => {
                 />
               )}
           </Box>
-
-          <Typography variant="body2" sx={{ textAlign: 'center', mt: 2 }}>
-            No account?{' '}
-            <Link component={RouterLink} to="/company/signup" underline="hover">
-              Register
-            </Link>
-          </Typography>
         </Paper>
       </Box>
     </ThemeProvider>
   );
 };
 
-export default CompanyLoginPage;
+export default AdminLoginPage;
