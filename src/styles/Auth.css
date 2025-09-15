@@ -59,6 +59,7 @@ main {
 
 
 /* Auth & Dashboard Containers */
+/*
 .auth-container, .dashboard-container {
   display: flex;
   justify-content: center;
@@ -73,7 +74,7 @@ main {
   text-align: center;
 }
 
-/* Auth Form */
+/* Auth Form 
 .auth-form {
   background: var(--form-background);
   padding: 2.5rem;
@@ -137,7 +138,7 @@ main {
   font-weight: 500;
 }
 
-/* Role Selection */
+/* Role Selection 
 .role-selection .auth-form {
     border: none;
     box-shadow: none;
@@ -226,7 +227,7 @@ main {
     font-weight: 500;
 }
 
-/* Detail Page Styles */
+/* Detail Page Styles 
 .detail-page-container {
     display: flex;
     justify-content: center;
@@ -255,7 +256,7 @@ main {
 }
 .description-text {
     line-height: 1.6;
-    white-space: pre-wrap; /* Preserves formatting like line breaks */
+    white-space: pre-wrap; /* Preserves formatting like line breaks 
 }
 .apply-button {
     margin-top: 2rem;
@@ -289,7 +290,7 @@ main {
     color: white;
 }
 
-/* Applicants Table Styles */
+/* Applicants Table Styles *
 .applicants-table {
     margin-top: 2rem;
     width: 100%;
@@ -340,7 +341,7 @@ main {
     color: white;
 }
 
-/* My Applications Page Styles */
+/* My Applications Page Styles *
 .applications-list-container {
     width: 100%;
     max-width: 900px;
@@ -388,10 +389,10 @@ main {
     color: white;
 }
 
-.status-applied { background-color: #0d6efd; } /* Blue */
-.status-under_review { background-color: #ffc107; } /* Yellow */
-.status-selected { background-color: #198754; } /* Green */
-.status-rejected { background-color: #dc3545; } /* Red */
+.status-applied { background-color: #0d6efd; } /* Blue *
+.status-under_review { background-color: #ffc107; } /* Yellow *
+.status-selected { background-color: #198754; } /* Green *
+.status-rejected { background-color: #dc3545; } /* Red *
 
 .status-select {
     padding: 0.25rem 0.5rem;
@@ -426,7 +427,7 @@ main {
     margin-top: 1rem;
 }
 
-/* Profile Form Styles */
+/* Profile Form Styles *
 .profile-card .form-group {
     margin-bottom: 1.5rem;
 }
@@ -527,13 +528,13 @@ main {
 }
 
 .approve-btn {
-    background-color: #198754; /* Green */
+    background-color: #198754; /* Green *
 }
 
 .reject-btn {
-    background-color: #dc3545; /* Red */
+    background-color: #dc3545; /* Red *
 }
-
+*/
 
 
 
